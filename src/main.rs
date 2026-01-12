@@ -10,21 +10,46 @@ static DEBUG: bool = false;
 #[derive(Default)]
 struct Plugin {
     permission_granted: bool,
+    setup: bool,
     buffered_events: Vec<Event>,
+    clients: Vec<ClientInfo>,
+    tabs: Vec<TabInfo>,
+    manifest: PaneManifest,
+    picked: Vec<PaneId>,
 }
 
 register_plugin!(Plugin);
+
+enum Command {
+    Pick,
+    Place,
+}
+
+impl TryFrom<String> for Command {
+    type Error = String;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "pick" => Ok(Command::Pick),
+            "place" => Ok(Command::Place),
+            _ => Err(format!("unknown command '{}'", value))
+        }
+    }
+}
 
 impl ZellijPlugin for Plugin {
     fn load(&mut self, _configuration: BTreeMap<String, String>) {
         subscribe(&[
             EventType::PermissionRequestResult,
+            EventType::ListClients,
+            EventType::TabUpdate,
+            EventType::PaneUpdate,
         ]);
 
         request_permission(&[
             PermissionType::ReadApplicationState,
             PermissionType::ChangeApplicationState,
         ]);
+
     }
 
     fn update(&mut self, event: Event) -> bool {
@@ -36,6 +61,12 @@ impl ZellijPlugin for Plugin {
         }
 
         if self.permission_granted {
+            // hide the plugin pane if we have permissions
+            if !DEBUG && !self.setup {
+                hide_self();
+                self.setup = true;
+            }
+
             while self.buffered_events.len() > 0 {
                 let event = self.buffered_events.pop().unwrap();
                 self.handle_event(event);
@@ -46,17 +77,78 @@ impl ZellijPlugin for Plugin {
     }
 
     fn pipe(&mut self, pipe_message: PipeMessage) -> bool {
-        let _payload = match pipe_message.payload {
+        // ignore messages with no payload
+        let payload = match pipe_message.payload {
             Some(payload) => payload,
             None => return false
         };
 
+        // parse command from payload
+        let command = match Command::try_from(payload) {
+            Ok(command) => command,
+            Err(parse_err) => {
+                eprintln!("{}", parse_err);
+                return false;
+            }
+        };
+
+        match command {
+            Command::Pick => self.pick(),
+            Command::Place => self.place(),
+        }
+
         return DEBUG;
     }
 
-    fn render(&mut self, _rows: usize, _cols: usize) { }
+    fn render(&mut self, _rows: usize, _cols: usize) {
+        println!("Picked panes: {:?}", self.picked);
+        println!();
+        if let Some(pane) = self.get_focused_pane() {
+            println!("Focused Pane: {:?}", pane);
+        }
+    }
 }
 
 impl Plugin {
-    fn handle_event(&mut self, _event: Event) { }
+    fn handle_event(&mut self, event: Event) {
+        match event {
+            Event::ListClients(clients) => self.clients = clients,
+            Event::TabUpdate(tabs) => {
+                self.tabs = tabs;
+                list_clients();
+            },
+            Event::PaneUpdate(manifest) => {
+                self.manifest = manifest;
+                list_clients();
+            },
+            _ => {}
+        }
+    }
+
+    fn pick(&mut self) {
+        if let Some(pane) = self.get_focused_pane() {
+            if !self.picked.contains(&pane) {
+                self.picked.push(pane);
+            }
+        }
+    }
+
+    fn place(&mut self) {
+        if let Some(tab) = get_focused_tab(&self.tabs) {
+            break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
+            self.picked.clear();
+        }
+
+        if !DEBUG { close_self(); }
+    }
+
+    fn get_focused_pane(&self) -> Option<PaneId> {
+        for client in &self.clients {
+            if client.is_current_client {
+                return Some(client.pane_id);
+            }
+        }
+
+        None
+    }
 }
