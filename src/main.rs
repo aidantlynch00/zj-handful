@@ -23,6 +23,7 @@ register_plugin!(Plugin);
 enum Command {
     Pick,
     Place,
+    Chuck,
 }
 
 impl TryFrom<String> for Command {
@@ -31,6 +32,7 @@ impl TryFrom<String> for Command {
         match value.as_str() {
             "pick" => Ok(Command::Pick),
             "place" => Ok(Command::Place),
+            "chuck" => Ok(Command::Chuck),
             _ => Err(format!("unknown command '{}'", value))
         }
     }
@@ -95,6 +97,7 @@ impl ZellijPlugin for Plugin {
         match command {
             Command::Pick => self.pick(),
             Command::Place => self.place(),
+            Command::Chuck => self.chuck(),
         }
 
         return DEBUG;
@@ -138,6 +141,13 @@ impl Plugin {
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
             self.picked.clear();
         }
+
+        if !DEBUG { close_self(); }
+    }
+
+    fn chuck(&mut self) {
+        break_panes_to_new_tab(self.picked.as_slice(), None, true);
+        self.picked.clear();
 
         if !DEBUG { close_self(); }
     }
