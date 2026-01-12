@@ -132,12 +132,17 @@ impl Plugin {
         if let Some(pane) = self.get_focused_pane() {
             if !self.picked.contains(&pane) {
                 self.picked.push(pane);
+                hide_pane_with_id(pane);
             }
         }
     }
 
     fn place(&mut self) {
         if let Some(tab) = get_focused_tab(&self.tabs) {
+            for pane in &self.picked {
+                show_pane_with_id(*pane, false);
+            }
+
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
             self.picked.clear();
         }
@@ -146,8 +151,14 @@ impl Plugin {
     }
 
     fn chuck(&mut self) {
-        break_panes_to_new_tab(self.picked.as_slice(), None, true);
-        self.picked.clear();
+        if self.picked.len() > 0 {
+            for pane in &self.picked {
+                show_pane_with_id(*pane, false);
+            }
+
+            break_panes_to_new_tab(self.picked.as_slice(), None, true);
+            self.picked.clear();
+        }
 
         if !DEBUG { close_self(); }
     }
