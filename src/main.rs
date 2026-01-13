@@ -2,12 +2,36 @@ use std::collections::BTreeMap;
 use zellij_tile::prelude::*;
 
 #[cfg(debug_assertions)]
-static DEBUG: bool = true;
+mod env {
+    use std::fs::File;
+    use std::sync::Arc;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+    use tracing_subscriber::fmt::layer;
+
+    pub static DEBUG: bool = true;
+
+    pub fn init_tracing() {
+        let file = File::create("/host/zj-pnp.log");
+        let file = match file {
+            Ok(file) => file,
+            Err(error) => panic!("error creating log file: {:?}", error)
+        };
+
+        let debug_log = layer().with_writer(Arc::new(file));
+        tracing_subscriber::registry()
+            .with(debug_log)
+            .init();
+    }
+}
 
 #[cfg(not(debug_assertions))]
-static DEBUG: bool = false;
+mod env {
+    pub static DEBUG: bool = false;
+    pub fn init_tracing() { }
+}
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Plugin {
     permission_granted: bool,
     setup: bool,
@@ -40,20 +64,29 @@ impl TryFrom<String> for Command {
 
 impl ZellijPlugin for Plugin {
     fn load(&mut self, _configuration: BTreeMap<String, String>) {
-        subscribe(&[
+        env::init_tracing();
+        tracing::debug!("tracing initialized");
+
+        let events = &[
             EventType::PermissionRequestResult,
             EventType::ListClients,
             EventType::TabUpdate,
             EventType::PaneUpdate,
-        ]);
+        ];
 
-        request_permission(&[
+        subscribe(events);
+        tracing::info!("subscribed to {:?}", events);
+
+        let permissions = &[
             PermissionType::ReadApplicationState,
             PermissionType::ChangeApplicationState,
-        ]);
+        ];
 
+        request_permission(permissions);
+        tracing::info!("requested permissions {:?}", permissions);
     }
 
+    #[tracing::instrument(skip_all)]
     fn update(&mut self, event: Event) -> bool {
         match event {
             Event::PermissionRequestResult(status) => {
@@ -63,9 +96,10 @@ impl ZellijPlugin for Plugin {
         }
 
         if self.permission_granted {
-            // hide the plugin pane if we have permissions
-            if !DEBUG && !self.setup {
-                hide_self();
+            // complete setup if we have permissions
+            if !self.setup {
+                tracing::info!("permission granted");
+                if !env::DEBUG { hide_self(); }
                 self.setup = true;
             }
 
@@ -75,9 +109,10 @@ impl ZellijPlugin for Plugin {
             }
         }
 
-        return DEBUG;
+        return env::DEBUG;
     }
 
+    #[tracing::instrument(skip_all)]
     fn pipe(&mut self, pipe_message: PipeMessage) -> bool {
         // ignore messages with no payload
         let payload = match pipe_message.payload {
@@ -89,7 +124,7 @@ impl ZellijPlugin for Plugin {
         let command = match Command::try_from(payload) {
             Ok(command) => command,
             Err(parse_err) => {
-                eprintln!("{}", parse_err);
+                tracing::error!("{}", parse_err);
                 return false;
             }
         };
@@ -100,9 +135,10 @@ impl ZellijPlugin for Plugin {
             Command::Chuck => self.chuck(),
         }
 
-        return DEBUG;
+        return env::DEBUG;
     }
 
+    #[tracing::instrument(skip_all)]
     fn render(&mut self, _rows: usize, _cols: usize) {
         println!("Picked panes: {:?}", self.picked);
         println!();
@@ -113,14 +149,20 @@ impl ZellijPlugin for Plugin {
 }
 
 impl Plugin {
+    #[tracing::instrument(skip_all)]
     fn handle_event(&mut self, event: Event) {
         match event {
-            Event::ListClients(clients) => self.clients = clients,
+            Event::ListClients(clients) => {
+                tracing::trace!("got clients");
+                self.clients = clients;
+            },
             Event::TabUpdate(tabs) => {
+                tracing::trace!("got tabs");
                 self.tabs = tabs;
                 list_clients();
             },
             Event::PaneUpdate(manifest) => {
+                tracing::trace!("got panes");
                 self.manifest = manifest;
                 list_clients();
             },
@@ -128,39 +170,57 @@ impl Plugin {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     fn pick(&mut self) {
+        tracing::trace!("pick called");
         if let Some(pane) = self.get_focused_pane() {
             if !self.picked.contains(&pane) {
+                tracing::info!("picking pane {:?}", pane);
                 self.picked.push(pane);
+                tracing::debug!("hiding pane {:?}", pane);
                 hide_pane_with_id(pane);
             }
         }
     }
 
+    #[tracing::instrument(skip_all)]
     fn place(&mut self) {
+        tracing::trace!("place called");
         if let Some(tab) = get_focused_tab(&self.tabs) {
             for pane in &self.picked {
+                tracing::debug!("showing pane {:?}", pane);
                 show_pane_with_id(*pane, false);
             }
 
+            tracing::info!("placing {:?}", self.picked);
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
             self.picked.clear();
         }
 
-        if !DEBUG { close_self(); }
+        if !env::DEBUG {
+            tracing::debug!("closing plugin pane");
+            close_self();
+        }
     }
 
+    #[tracing::instrument(skip_all)]
     fn chuck(&mut self) {
+        tracing::trace!("chuck called");
         if self.picked.len() > 0 {
             for pane in &self.picked {
+                tracing::debug!("showing pane {:?}", pane);
                 show_pane_with_id(*pane, false);
             }
 
+            tracing::info!("chucking {:?}", self.picked);
             break_panes_to_new_tab(self.picked.as_slice(), None, true);
             self.picked.clear();
         }
 
-        if !DEBUG { close_self(); }
+        if !env::DEBUG {
+            tracing::debug!("closing plugin pane");
+            close_self();
+        }
     }
 
     fn get_focused_pane(&self) -> Option<PaneId> {
