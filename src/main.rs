@@ -33,8 +33,7 @@ mod env {
 
 #[derive(Debug, Default)]
 struct Plugin {
-    permission_granted: bool,
-    setup: bool,
+    permission_granted: Option<bool>,
     buffered_events: Vec<Event>,
     clients: Vec<ClientInfo>,
     tabs: Vec<TabInfo>,
@@ -88,28 +87,26 @@ impl ZellijPlugin for Plugin {
 
     #[tracing::instrument(skip_all)]
     fn update(&mut self, event: Event) -> bool {
-        match event {
-            Event::PermissionRequestResult(status) => {
-                self.permission_granted = matches!(status, PermissionStatus::Granted);
-            },
-            _ => self.buffered_events.push(event),
-        }
-
-        if self.permission_granted {
-            // complete setup if we have permissions
-            if !self.setup {
+        match (&self.permission_granted, &event) {
+            (None, Event::PermissionRequestResult(PermissionStatus::Granted)) => {
                 tracing::info!("permission granted");
-                if !env::DEBUG { hide_self(); }
-                self.setup = true;
-            }
-
-            while self.buffered_events.len() > 0 {
-                let event = self.buffered_events.pop().unwrap();
-                self.handle_event(event);
-            }
+                self.permission_granted = Some(true);
+                self.finish_setup();
+                env::DEBUG
+            },
+            (_, Event::PermissionRequestResult(PermissionStatus::Denied)) => {
+                self.permission_granted = Some(false);
+                false
+            },
+            (None, _) => {
+                self.buffered_events.push(event);
+                false
+            },
+            (Some(true), _) => {
+                env::DEBUG && self.handle_event(event)
+            },
+            (Some(false), _) => { false }
         }
-
-        return env::DEBUG;
     }
 
     #[tracing::instrument(skip_all)]
@@ -150,23 +147,26 @@ impl ZellijPlugin for Plugin {
 
 impl Plugin {
     #[tracing::instrument(skip_all)]
-    fn handle_event(&mut self, event: Event) {
+    fn handle_event(&mut self, event: Event) -> bool {
         match event {
             Event::ListClients(clients) => {
                 tracing::trace!("got clients");
                 self.clients = clients;
+                true
             },
             Event::TabUpdate(tabs) => {
                 tracing::trace!("got tabs");
                 self.tabs = tabs;
                 list_clients();
+                false
             },
             Event::PaneUpdate(manifest) => {
                 tracing::trace!("got panes");
                 self.manifest = manifest;
                 list_clients();
+                false
             },
-            _ => {}
+            _ => { false }
         }
     }
 
@@ -220,6 +220,15 @@ impl Plugin {
         if !env::DEBUG {
             tracing::debug!("closing plugin pane");
             close_self();
+        }
+    }
+
+    #[tracing::instrument(skip_all)]
+    fn finish_setup(&mut self) {
+        if !env::DEBUG { hide_self(); }
+        while self.buffered_events.len() > 0 {
+            let event = self.buffered_events.pop().unwrap();
+            self.handle_event(event);
         }
     }
 
