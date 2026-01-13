@@ -35,13 +35,15 @@ mod env {
 struct Plugin {
     permission_granted: Option<bool>,
     buffered_events: Vec<Event>,
-    clients: Vec<ClientInfo>,
-    tabs: Vec<TabInfo>,
+    buffered_command: Option<Command>,
+    clients: Option<Vec<ClientInfo>>,
+    tabs: Option<Vec<TabInfo>>,
     picked: Vec<PaneId>,
 }
 
 register_plugin!(Plugin);
 
+#[derive(Debug)]
 enum Command {
     Pick,
     Place,
@@ -124,13 +126,8 @@ impl ZellijPlugin for Plugin {
             }
         };
 
-        match command {
-            Command::Pick => self.pick(),
-            Command::Place => self.place(),
-            Command::Chuck => self.chuck(),
-        }
-
-        return env::DEBUG;
+        self.buffered_command = Some(command);
+        env::DEBUG && self.handle_command()
     }
 
     #[tracing::instrument(skip_all)]
@@ -149,17 +146,43 @@ impl Plugin {
         match event {
             Event::ListClients(clients) => {
                 tracing::trace!("got clients");
-                self.clients = clients;
+                self.clients = Some(clients);
+                self.handle_command();
                 true
             },
             Event::TabUpdate(tabs) => {
                 tracing::trace!("got tabs");
-                self.tabs = tabs;
+                self.tabs = Some(tabs);
+                self.clients = None;
                 list_clients();
                 false
             },
             _ => { false }
         }
+    }
+
+    #[tracing::instrument(skip_all)]
+    fn handle_command(&mut self) -> bool {
+        match (&self.tabs, &self.clients) {
+            (Some(_), Some(_)) => { },
+            _ => {
+                tracing::debug!("cannot handle command yet");
+                return false;
+            }
+        };
+
+        if let Some(command) = &self.buffered_command {
+            match command {
+                Command::Pick => self.pick(),
+                Command::Place => self.place(),
+                Command::Chuck => self.chuck(),
+            }
+
+            self.buffered_command.take();
+            return true;
+        }
+
+        false
     }
 
     #[tracing::instrument(skip_all)]
@@ -178,7 +201,12 @@ impl Plugin {
     #[tracing::instrument(skip_all)]
     fn place(&mut self) {
         tracing::trace!("place called");
-        if let Some(tab) = get_focused_tab(&self.tabs) {
+
+        let focused_tab = self.tabs
+            .as_ref()
+            .and_then(get_focused_tab);
+
+        if let Some(tab) = focused_tab {
             for pane in &self.picked {
                 tracing::debug!("showing pane {:?}", pane);
                 show_pane_with_id(*pane, false);
@@ -225,7 +253,7 @@ impl Plugin {
     }
 
     fn get_focused_pane(&self) -> Option<PaneId> {
-        for client in &self.clients {
+        for client in self.clients.as_ref()? {
             if client.is_current_client {
                 return Some(client.pane_id);
             }
