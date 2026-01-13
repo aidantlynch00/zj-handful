@@ -173,12 +173,20 @@ impl Plugin {
 
         if let Some(command) = &self.buffered_command {
             match command {
+                Command::Chuck => {
+                    tracing::trace!("handling chuck");
+
+                    // create a new tab and wait to place on it
+                    new_tab::<&str>(None, None);
+                    self.tabs = None;
+                    self.buffered_command = Some(Command::Place);
+                    return false;
+                },
                 Command::Pick => self.pick(),
                 Command::Place => self.place(),
-                Command::Chuck => self.chuck(),
             }
 
-            self.buffered_command.take();
+            self.buffered_command = None;
             return true;
         }
 
@@ -202,9 +210,8 @@ impl Plugin {
     fn place(&mut self) {
         tracing::trace!("place called");
 
-        let focused_tab = self.tabs
-            .as_ref()
-            .and_then(get_focused_tab);
+        let tabs = self.tabs.as_ref().unwrap();
+        let focused_tab = get_focused_tab(tabs);
 
         if let Some(tab) = focused_tab {
             for pane in &self.picked {
@@ -214,26 +221,6 @@ impl Plugin {
 
             tracing::info!("placing {:?}", self.picked);
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
-            self.picked.clear();
-        }
-
-        if !env::DEBUG {
-            tracing::debug!("closing plugin pane");
-            close_self();
-        }
-    }
-
-    #[tracing::instrument(skip_all)]
-    fn chuck(&mut self) {
-        tracing::trace!("chuck called");
-        if self.picked.len() > 0 {
-            for pane in &self.picked {
-                tracing::debug!("showing pane {:?}", pane);
-                show_pane_with_id(*pane, false);
-            }
-
-            tracing::info!("chucking {:?}", self.picked);
-            break_panes_to_new_tab(self.picked.as_slice(), None, true);
             self.picked.clear();
         }
 
