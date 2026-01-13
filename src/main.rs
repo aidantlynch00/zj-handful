@@ -37,7 +37,6 @@ struct Plugin {
     buffered_events: Vec<Event>,
     clients: Vec<ClientInfo>,
     tabs: Vec<TabInfo>,
-    manifest: PaneManifest,
     picked: Vec<PaneId>,
 }
 
@@ -70,7 +69,6 @@ impl ZellijPlugin for Plugin {
             EventType::PermissionRequestResult,
             EventType::ListClients,
             EventType::TabUpdate,
-            EventType::PaneUpdate,
         ];
 
         subscribe(events);
@@ -157,12 +155,6 @@ impl Plugin {
             Event::TabUpdate(tabs) => {
                 tracing::trace!("got tabs");
                 self.tabs = tabs;
-                list_clients();
-                false
-            },
-            Event::PaneUpdate(manifest) => {
-                tracing::trace!("got panes");
-                self.manifest = manifest;
                 list_clients();
                 false
             },
