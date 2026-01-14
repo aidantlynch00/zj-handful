@@ -1,34 +1,26 @@
 use std::collections::BTreeMap;
 use zellij_tile::prelude::*;
 
-#[cfg(debug_assertions)]
-mod env {
+#[cfg(feature = "tracing")]
+pub fn init_tracing() {
     use std::fs::File;
     use std::sync::Arc;
     use tracing_subscriber::layer::SubscriberExt;
-    use tracing_subscriber::util::SubscriberInitExt;
-    use tracing_subscriber::fmt::layer;
 
-    pub static DEBUG: bool = true;
+    let file = File::create("/host/zj-pnp.log");
+    let file = match file {
+        Ok(file) => file,
+        Err(error) => panic!("error creating log file: {:?}", error)
+    };
 
-    pub fn init_tracing() {
-        let file = File::create("/host/zj-pnp.log");
-        let file = match file {
-            Ok(file) => file,
-            Err(error) => panic!("error creating log file: {:?}", error)
-        };
+    let writer = tracing_subscriber::fmt::layer()
+        .with_writer(Arc::new(file));
 
-        let debug_log = layer().with_writer(Arc::new(file));
-        tracing_subscriber::registry()
-            .with(debug_log)
-            .init();
-    }
-}
+    let subscriber = tracing_subscriber::registry()
+        .with(writer);
 
-#[cfg(not(debug_assertions))]
-mod env {
-    pub static DEBUG: bool = false;
-    pub fn init_tracing() { }
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("failed to init tracing");
 }
 
 #[derive(Debug, Default)]
@@ -64,7 +56,8 @@ impl TryFrom<String> for Command {
 
 impl ZellijPlugin for Plugin {
     fn load(&mut self, _configuration: BTreeMap<String, String>) {
-        env::init_tracing();
+        #[cfg(feature = "tracing")]
+        init_tracing();
         tracing::debug!("tracing initialized");
 
         let events = &[
@@ -92,21 +85,20 @@ impl ZellijPlugin for Plugin {
                 tracing::info!("permission granted");
                 self.permission_granted = Some(true);
                 self.finish_setup();
-                env::DEBUG
             },
             (_, Event::PermissionRequestResult(PermissionStatus::Denied)) => {
                 self.permission_granted = Some(false);
-                false
             },
             (None, _) => {
                 self.buffered_events.push(event);
-                false
             },
             (Some(true), _) => {
-                env::DEBUG && self.handle_event(event)
+                self.handle_event(event);
             },
-            (Some(false), _) => { false }
+            (Some(false), _) => { }
         }
+
+        false
     }
 
     #[tracing::instrument(skip_all)]
@@ -127,47 +119,40 @@ impl ZellijPlugin for Plugin {
         };
 
         self.buffered_command = Some(command);
-        env::DEBUG && self.handle_command()
+        self.handle_command();
+
+        false
     }
 
-    #[tracing::instrument(skip_all)]
-    fn render(&mut self, _rows: usize, _cols: usize) {
-        println!("Picked panes: {:?}", self.picked);
-        println!();
-        if let Some(pane) = self.get_focused_pane() {
-            println!("Focused Pane: {:?}", pane);
-        }
-    }
+    fn render(&mut self, _rows: usize, _cols: usize) { }
 }
 
 impl Plugin {
     #[tracing::instrument(skip_all)]
-    fn handle_event(&mut self, event: Event) -> bool {
+    fn handle_event(&mut self, event: Event) {
         match event {
             Event::ListClients(clients) => {
                 tracing::trace!("got clients");
                 self.clients = Some(clients);
                 self.handle_command();
-                true
             },
             Event::TabUpdate(tabs) => {
                 tracing::trace!("got tabs");
                 self.tabs = Some(tabs);
                 self.clients = None;
                 list_clients();
-                false
             },
-            _ => { false }
+            _ => { }
         }
     }
 
     #[tracing::instrument(skip_all)]
-    fn handle_command(&mut self) -> bool {
+    fn handle_command(&mut self) {
         match (&self.tabs, &self.clients) {
             (Some(_), Some(_)) => { },
             _ => {
                 tracing::debug!("cannot handle command yet");
-                return false;
+                return;
             }
         };
 
@@ -180,17 +165,14 @@ impl Plugin {
                     new_tab::<&str>(None, None);
                     self.tabs = None;
                     self.buffered_command = Some(Command::Place);
-                    return false;
+                    return;
                 },
                 Command::Pick => self.pick(),
                 Command::Place => self.place(),
             }
 
             self.buffered_command = None;
-            return true;
         }
-
-        false
     }
 
     #[tracing::instrument(skip_all)]
@@ -223,16 +205,13 @@ impl Plugin {
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
             self.picked.clear();
         }
-
-        if !env::DEBUG {
-            tracing::debug!("closing plugin pane");
-            close_self();
-        }
     }
 
     #[tracing::instrument(skip_all)]
     fn finish_setup(&mut self) {
-        if !env::DEBUG { hide_self(); }
+        tracing::debug!("closing plugin pane");
+        hide_self();
+
         while self.buffered_events.len() > 0 {
             let event = self.buffered_events.pop().unwrap();
             self.handle_event(event);
