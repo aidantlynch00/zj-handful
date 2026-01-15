@@ -202,10 +202,7 @@ impl Plugin {
         let focused_tab = get_focused_tab(tabs);
 
         if let Some(tab) = focused_tab {
-            for pane in &self.picked {
-                tracing::debug!("showing pane {:?}", pane);
-                show_pane_with_id(*pane, false);
-            }
+            self.show_picked_panes();
 
             tracing::info!("placing {:?}", self.picked);
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
@@ -219,12 +216,9 @@ impl Plugin {
     fn toss(&mut self) {
         tracing::trace!("toss called");
 
-        let picked = std::mem::take(&mut self.picked);
-        for pane in &picked {
-            tracing::debug!("showing pane {:?}", pane);
-            show_pane_with_id(*pane, false);
-        }
+        self.show_picked_panes();
 
+        let picked = std::mem::take(&mut self.picked);
         float_multiple_panes(picked);
         close_self();
     }
@@ -233,12 +227,9 @@ impl Plugin {
     fn spike(&mut self) {
         tracing::trace!("spike called");
 
-        let picked = std::mem::take(&mut self.picked);
-        for pane in &picked {
-            tracing::debug!("showing pane {:?}", pane);
-            show_pane_with_id(*pane, false);
-        }
+        self.show_picked_panes();
 
+        let picked = std::mem::take(&mut self.picked);
         embed_multiple_panes(picked);
         close_self();
     }
@@ -263,5 +254,12 @@ impl Plugin {
         }
 
         None
+    }
+
+    fn show_picked_panes(&self) {
+        for pane in &self.picked {
+            tracing::debug!("showing pane {:?}", pane);
+            show_pane_with_id(*pane, false);
+        }
     }
 }
