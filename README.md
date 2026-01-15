@@ -11,6 +11,7 @@ TODO: GIF showing off features
     - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
 - **Toss** panes into the floating layer
 - **Spike** panes into the embedded layer
+- **Squeeze** panes into a stack
 - **Chuck** panes into the void, never to return
 
 ## Usage
@@ -46,6 +47,11 @@ pane {
 
     bind "E" {
         MessagePlugin "zj-handful" { payload "spike"; }
+        SwitchMode "Normal"
+    }
+
+    bind "s" {
+        MessagePlugin "zj-handful" { payload "squeeze"; }
         SwitchMode "Normal"
     }
 
