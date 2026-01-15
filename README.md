@@ -70,6 +70,6 @@ cp target/wasm32-wasip1/release/zj-handful.wasm /path/to/zj-handful.wasm
 When you have the binary where you want it, you can refer to the file in your keybinds or alias:
 ```kdl
 plugins {
-    zj-handful "file:/path/to/zj-handful.wasm"
+    zj-handful location="file:/path/to/zj-handful.wasm"
 }
 ```
