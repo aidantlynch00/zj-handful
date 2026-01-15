@@ -37,7 +37,7 @@ register_plugin!(Plugin);
 
 #[derive(Debug)]
 enum Command {
-    Pick,
+    Pick(bool),
     Place,
     Throw,
     Toss,
@@ -49,7 +49,8 @@ impl TryFrom<String> for Command {
     type Error = String;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
-            "pick" => Ok(Command::Pick),
+            "pick" => Ok(Command::Pick(false)),
+            "pick-hide" => Ok(Command::Pick(true)),
             "place" => Ok(Command::Place),
             "throw" => Ok(Command::Throw),
             "toss" => Ok(Command::Toss),
@@ -173,7 +174,7 @@ impl Plugin {
                     self.buffered_command = Some(Command::Place);
                     return;
                 },
-                Command::Pick => self.pick(),
+                Command::Pick(hide) => self.pick(*hide),
                 Command::Place => self.place(),
                 Command::Toss => self.toss(),
                 Command::Spike => self.spike(),
@@ -185,14 +186,21 @@ impl Plugin {
     }
 
     #[tracing::instrument(skip_all)]
-    fn pick(&mut self) {
+    fn pick(&mut self, hide: bool) {
         tracing::trace!("pick called");
         if let Some(pane) = self.get_focused_pane() {
             if !self.picked.contains(&pane) {
                 tracing::info!("picking pane {:?}", pane);
                 self.picked.push(pane);
-                tracing::debug!("hiding pane {:?}", pane);
-                hide_pane_with_id(pane);
+
+                if hide {
+                    tracing::debug!("hiding pane {:?}", pane);
+                    hide_pane_with_id(pane);
+                }
+                else {
+                    tracing::debug!("highlighting pane {:?}", pane);
+                    highlight_and_unhighlight_panes(vec![pane], Vec::new());
+                }
             }
         }
     }
@@ -205,7 +213,7 @@ impl Plugin {
         let focused_tab = get_focused_tab(tabs);
 
         if let Some(tab) = focused_tab {
-            self.show_picked_panes();
+            self.reset_picked_panes();
 
             tracing::info!("placing {:?}", self.picked);
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
@@ -219,7 +227,7 @@ impl Plugin {
     fn toss(&mut self) {
         tracing::trace!("toss called");
 
-        self.show_picked_panes();
+        self.reset_picked_panes();
 
         let picked = std::mem::take(&mut self.picked);
         float_multiple_panes(picked);
@@ -230,7 +238,7 @@ impl Plugin {
     fn spike(&mut self) {
         tracing::trace!("spike called");
 
-        self.show_picked_panes();
+        self.reset_picked_panes();
 
         let picked = std::mem::take(&mut self.picked);
         embed_multiple_panes(picked);
@@ -268,10 +276,12 @@ impl Plugin {
         None
     }
 
-    fn show_picked_panes(&self) {
+    fn reset_picked_panes(&self) {
         for pane in &self.picked {
             tracing::debug!("showing pane {:?}", pane);
             show_pane_with_id(*pane, false);
         }
+
+        highlight_and_unhighlight_panes(Vec::new(), self.picked.clone());
     }
 }

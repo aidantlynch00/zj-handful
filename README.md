@@ -5,6 +5,7 @@ TODO: GIF showing off features
 
 ## Features
 - **Pick** several panes across tabs
+    - Choose to hide the pane while picked
 - **Place** panes onto an existing tab
 - **Throw** panes onto a new tab
     - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
@@ -22,6 +23,10 @@ plugins {
 pane {
     bind "c" {
         MessagePlugin "zj-handful" { payload "pick"; }
+    }
+
+    bind "C" {
+        MessagePlugin "zj-handful" { payload "pick-hide"; }
     }
 
     bind "v" {
