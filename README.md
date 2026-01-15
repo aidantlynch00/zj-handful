@@ -1,5 +1,5 @@
-# zj-pnp
-A [zellij](https://github.com/zellij-org/zellij) plugin for quickly picking and placing your panes.
+# zj-handful
+A [zellij](https://github.com/zellij-org/zellij) plugin for quickly picking and placing a handful of panes.
 
 TODO: GIF showing off features
 
@@ -10,23 +10,23 @@ TODO: GIF showing off features
     - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
 
 ## Usage
-The easiest way to get started with zj-pnp is to add the following to your zellij keybinds (I prefer mine in pane mode):
+The easiest way to get started with zj-handful is to add the following to your zellij keybinds (I prefer mine in pane mode):
 ```kdl
 pane {
     bind "c" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-pnp/releases/latest/download/zj-pnp.wasm" {
+        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
             payload "pick";
         }
     }
 
     bind "v" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-pnp/releases/latest/download/zj-pnp.wasm" {
+        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
             payload "place";
         }
     }
 
     bind "V" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-pnp/releases/latest/download/zj-pnp.wasm" {
+        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
             payload "chuck";
         }
     }
@@ -34,17 +34,17 @@ pane {
 ```
 
 ## Installation
-If you prefer to install zj-pnp, download the [latest prebuilt binary](https://github.com/aidantlynch00/zj-pnp/releases/latest/download/zj-pnp.wasm) or build from source using the following commands:
+If you prefer to install zj-handful, download the [latest prebuilt binary](https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm) or build from source using the following commands:
 ```sh
-git clone https://github.com/aidantlynch00/zj-pnp.git
-cd zj-pnp
+git clone https://github.com/aidantlynch00/zj-handful.git
+cd zj-handful
 cargo build --release
-cp target/wasm32-wasip1/release/zj-pnp.wasm /path/to/zj-pnp.wasm
+cp target/wasm32-wasip1/release/zj-handful.wasm /path/to/zj-handful.wasm
 ```
 
 When you have the binary where you want it, you can refer to the file in your keybinds:
 ```kdl
-MessagePlugin "file:/path/to/zj-pnp.wasm" {
+MessagePlugin "file:/path/to/zj-handful.wasm" {
     payload "pick"
 }
 ```
@@ -52,6 +52,6 @@ MessagePlugin "file:/path/to/zj-pnp.wasm" {
 Alternatively, you can add a plugin alias to your zellij config and refer to that in your keybinds:
 ```kdl
 plugins {
-    zj-pnp location="file:/path/to/zj-pnp.wasm" // or GitHub!
+    zj-handful location="file:/path/to/zj-handful.wasm" // or GitHub!
 }
 ```

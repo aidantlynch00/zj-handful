@@ -7,7 +7,7 @@ pub fn init_tracing() {
     use std::sync::Arc;
     use tracing_subscriber::layer::SubscriberExt;
 
-    let file = File::create("/host/zj-pnp.log");
+    let file = File::create("/host/zj-handful.log");
     let file = match file {
         Ok(file) => file,
         Err(error) => panic!("error creating log file: {:?}", error)
