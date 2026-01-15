@@ -12,6 +12,7 @@ TODO: GIF showing off features
 - **Toss** panes into the floating layer
 - **Spike** panes into the embedded layer
 - **Squeeze** panes into a stack
+- **Drop** panes back into place
 - **Chuck** panes into the void, never to return
 
 ## Usage
@@ -56,6 +57,11 @@ pane {
     }
 
     bind "D" {
+        MessagePlugin "zj-handful" { payload "drop"; }
+        SwitchMode "Normal"
+    }
+
+    bind "K" {
         MessagePlugin "zj-handful" { payload "chuck"; }
         SwitchMode "Normal"
     }
