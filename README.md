@@ -6,10 +6,10 @@ TODO: GIF showing off features
 ## Features
 - **Pick** several panes across tabs
 - **Place** panes onto an existing tab
+- **Throw** panes onto a new tab
+    - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
 - **Toss** panes into the floating layer
 - **Spike** panes into the embedded layer
-- **Chuck** panes onto a new tab
-    - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
 
 ## Usage
 The easiest way to get started with zj-handful is to add the following to your zellij keybinds (I prefer mine in pane mode):
@@ -29,7 +29,7 @@ pane {
 
     bind "V" {
         MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
-            payload "chuck";
+            payload "throw";
         }
     }
 

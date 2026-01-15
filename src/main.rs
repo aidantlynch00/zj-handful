@@ -39,7 +39,7 @@ register_plugin!(Plugin);
 enum Command {
     Pick,
     Place,
-    Chuck,
+    Throw,
     Toss,
     Spike,
 }
@@ -50,7 +50,7 @@ impl TryFrom<String> for Command {
         match value.as_str() {
             "pick" => Ok(Command::Pick),
             "place" => Ok(Command::Place),
-            "chuck" => Ok(Command::Chuck),
+            "throw" => Ok(Command::Throw),
             "toss" => Ok(Command::Toss),
             "spike" => Ok(Command::Spike),
             _ => Err(format!("unknown command '{}'", value))
@@ -162,8 +162,8 @@ impl Plugin {
 
         if let Some(command) = &self.buffered_command {
             match command {
-                Command::Chuck => {
-                    tracing::trace!("handling chuck");
+                Command::Throw => {
+                    tracing::trace!("handling throw");
 
                     // create a new tab and wait to place on it
                     new_tab::<&str>(None, None);
