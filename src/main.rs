@@ -40,6 +40,8 @@ enum Command {
     Pick,
     Place,
     Chuck,
+    Toss,
+    Spike,
 }
 
 impl TryFrom<String> for Command {
@@ -49,6 +51,8 @@ impl TryFrom<String> for Command {
             "pick" => Ok(Command::Pick),
             "place" => Ok(Command::Place),
             "chuck" => Ok(Command::Chuck),
+            "toss" => Ok(Command::Toss),
+            "spike" => Ok(Command::Spike),
             _ => Err(format!("unknown command '{}'", value))
         }
     }
@@ -169,6 +173,8 @@ impl Plugin {
                 },
                 Command::Pick => self.pick(),
                 Command::Place => self.place(),
+                Command::Toss => self.toss(),
+                Command::Spike => self.spike(),
             }
 
             self.buffered_command = None;
@@ -206,6 +212,34 @@ impl Plugin {
             self.picked.clear();
         }
 
+        close_self();
+    }
+
+    #[tracing::instrument(skip_all)]
+    fn toss(&mut self) {
+        tracing::trace!("toss called");
+
+        let picked = std::mem::take(&mut self.picked);
+        for pane in &picked {
+            tracing::debug!("showing pane {:?}", pane);
+            show_pane_with_id(*pane, false);
+        }
+
+        float_multiple_panes(picked);
+        close_self();
+    }
+
+    #[tracing::instrument(skip_all)]
+    fn spike(&mut self) {
+        tracing::trace!("spike called");
+
+        let picked = std::mem::take(&mut self.picked);
+        for pane in &picked {
+            tracing::debug!("showing pane {:?}", pane);
+            show_pane_with_id(*pane, false);
+        }
+
+        embed_multiple_panes(picked);
         close_self();
     }
 

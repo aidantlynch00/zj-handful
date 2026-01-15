@@ -6,6 +6,8 @@ TODO: GIF showing off features
 ## Features
 - **Pick** several panes across tabs
 - **Place** panes onto an existing tab
+- **Toss** panes into the floating layer
+- **Spike** panes into the embedded layer
 - **Chuck** panes onto a new tab
     - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
 
@@ -30,8 +32,22 @@ pane {
             payload "chuck";
         }
     }
+
+    bind "W" {
+        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
+            payload "toss";
+        }
+    }
+
+    bind "E" {
+        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
+            payload "spike";
+        }
+    }
 }
 ```
+
+You can bind whatever set of commands you would like, only the pick command is required for picking panes.
 
 ## Installation
 If you prefer to install zj-handful, download the [latest prebuilt binary](https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm) or build from source using the following commands:
