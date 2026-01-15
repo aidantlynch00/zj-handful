@@ -10,42 +10,42 @@ TODO: GIF showing off features
     - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
 - **Toss** panes into the floating layer
 - **Spike** panes into the embedded layer
+- **Chuck** panes into the void, never to return
 
 ## Usage
-The easiest way to get started with zj-handful is to add the following keybinds to your zellij config. I personally put mine under pane mode, with all but pick returning me to normal mode.
+The easiest way to get started with zj-handful is to add the following keybinds to your zellij config. I personally put mine under pane mode, with all but pick returning me to normal mode. I also recommend setting up a plugin alias.
 ```kdl
+plugins {
+    zj-handful location="https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm"
+}
+
 pane {
     bind "c" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
-            payload "pick";
-        }
+        MessagePlugin "zj-handful" { payload "pick"; }
     }
 
     bind "v" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
-            payload "place";
-        }
+        MessagePlugin "zj-handful" { payload "place"; }
         SwitchMode "Normal"
     }
 
     bind "V" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
-            payload "throw";
-        }
+        MessagePlugin "zj-handful" { payload "throw"; }
         SwitchMode "Normal"
     }
 
     bind "W" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
-            payload "toss";
-        }
+        MessagePlugin "zj-handful" { payload "toss"; }
         SwitchMode "Normal"
     }
 
     bind "E" {
-        MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
-            payload "spike";
-        }
+        MessagePlugin "zj-handful" { payload "spike"; }
+        SwitchMode "Normal"
+    }
+
+    bind "D" {
+        MessagePlugin "zj-handful" { payload "chuck"; }
         SwitchMode "Normal"
     }
 }
@@ -62,16 +62,9 @@ cargo build --release
 cp target/wasm32-wasip1/release/zj-handful.wasm /path/to/zj-handful.wasm
 ```
 
-When you have the binary where you want it, you can refer to the file in your keybinds:
-```kdl
-MessagePlugin "file:/path/to/zj-handful.wasm" {
-    payload "pick"
-}
-```
-
-Alternatively, you can add a plugin alias to your zellij config and refer to that in your keybinds:
+When you have the binary where you want it, you can refer to the file in your keybinds or alias:
 ```kdl
 plugins {
-    zj-handful location="file:/path/to/zj-handful.wasm" // or GitHub!
+    zj-handful "file:/path/to/zj-handful.wasm"
 }
 ```
