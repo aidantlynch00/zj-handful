@@ -7,6 +7,7 @@ TODO: GIF showing off features
 - **Pick** several panes across tabs
 - **Place** panes onto an existing tab
 - **Chuck** panes onto a new tab
+    - Note: The new tab will be created with the default tab layout, so picked panes will be placed alongside those contents.
 
 ## Usage
 The easiest way to get started with zj-pnp is to add the following to your zellij keybinds (I prefer mine in pane mode):
@@ -14,19 +15,19 @@ The easiest way to get started with zj-pnp is to add the following to your zelli
 pane {
     bind "c" {
         MessagePlugin "https://github.com/aidantlynch00/zj-pnp/releases/latest/download/zj-pnp.wasm" {
-            payload "pick"
+            payload "pick";
         }
     }
 
     bind "v" {
         MessagePlugin "https://github.com/aidantlynch00/zj-pnp/releases/latest/download/zj-pnp.wasm" {
-            payload "place"
+            payload "place";
         }
     }
 
     bind "V" {
         MessagePlugin "https://github.com/aidantlynch00/zj-pnp/releases/latest/download/zj-pnp.wasm" {
-            payload "chuck"
+            payload "chuck";
         }
     }
 }
@@ -54,6 +55,3 @@ plugins {
     zj-pnp location="file:/path/to/zj-pnp.wasm" // or GitHub!
 }
 ```
-
-## Known Issues
-- If your current layout contains a default tab template, chucked panes may break zellij rendering. I think this is because the chucked panes are not considered children of the tab and therefore not rendered in the right order.

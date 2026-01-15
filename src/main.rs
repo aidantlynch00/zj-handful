@@ -205,12 +205,15 @@ impl Plugin {
             break_panes_to_tab_with_index(self.picked.as_slice(), tab.position, true);
             self.picked.clear();
         }
+
+        close_self();
     }
 
     #[tracing::instrument(skip_all)]
     fn finish_setup(&mut self) {
-        tracing::debug!("closing plugin pane");
+        tracing::debug!("hiding plugin pane and making it unselectable");
         hide_self();
+        set_selectable(false);
 
         while self.buffered_events.len() > 0 {
             let event = self.buffered_events.pop().unwrap();
