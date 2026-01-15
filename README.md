@@ -12,7 +12,7 @@ TODO: GIF showing off features
 - **Spike** panes into the embedded layer
 
 ## Usage
-The easiest way to get started with zj-handful is to add the following to your zellij keybinds (I prefer mine in pane mode):
+The easiest way to get started with zj-handful is to add the following keybinds to your zellij config. I personally put mine under pane mode, with all but pick returning me to normal mode.
 ```kdl
 pane {
     bind "c" {
@@ -25,24 +25,28 @@ pane {
         MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
             payload "place";
         }
+        SwitchMode "Normal"
     }
 
     bind "V" {
         MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
             payload "throw";
         }
+        SwitchMode "Normal"
     }
 
     bind "W" {
         MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
             payload "toss";
         }
+        SwitchMode "Normal"
     }
 
     bind "E" {
         MessagePlugin "https://github.com/aidantlynch00/zj-handful/releases/latest/download/zj-handful.wasm" {
             payload "spike";
         }
+        SwitchMode "Normal"
     }
 }
 ```
