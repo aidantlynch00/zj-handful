@@ -1,7 +1,7 @@
 # zj-handful
 A [zellij](https://github.com/zellij-org/zellij) plugin for quickly picking and placing a handful of panes.
 
-TODO: GIF showing off features
+![zj-handful](./assets/demo.gif)
 
 ## Features
 - **Pick** several panes across tabs
