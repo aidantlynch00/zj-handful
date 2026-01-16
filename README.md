@@ -1,5 +1,5 @@
 # zj-handful
-A [zellij](https://github.com/zellij-org/zellij) plugin for quickly picking and placing a handful of panes.
+A [zellij](https://github.com/zellij-org/zellij) plugin for quickly picking and placing a handful of panes. An alternative to the built-in multiple-select plugin (see [Why not multiple-select?](#why-not-multiple-select)).
 
 ![zj-handful](./assets/demo.gif)
 
