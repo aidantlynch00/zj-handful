@@ -1,7 +1,10 @@
 [package]
 name = "zj-handful"
 version = "0.1.0"
+authors = ["Aidan Lynch <aidantlynch00@gmail.com>"]
 edition = "2024"
+repository = "https://github.com/aidantlynch00/zj-handful.git"
+license-file = "LICENSE"
 
 [features]
 tracing = []
