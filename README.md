@@ -33,37 +33,37 @@ pane {
 
     bind "v" {
         MessagePlugin "zj-handful" { payload "place"; }
-        SwitchMode "Normal"
+        SwitchToMode "Normal"
     }
 
     bind "V" {
         MessagePlugin "zj-handful" { payload "throw"; }
-        SwitchMode "Normal"
+        SwitchToMode "Normal"
     }
 
     bind "W" {
         MessagePlugin "zj-handful" { payload "toss"; }
-        SwitchMode "Normal"
+        SwitchToMode "Normal"
     }
 
     bind "E" {
         MessagePlugin "zj-handful" { payload "spike"; }
-        SwitchMode "Normal"
+        SwitchToMode "Normal"
     }
 
     bind "s" {
         MessagePlugin "zj-handful" { payload "squeeze"; }
-        SwitchMode "Normal"
+        SwitchToMode "Normal"
     }
 
     bind "D" {
         MessagePlugin "zj-handful" { payload "drop"; }
-        SwitchMode "Normal"
+        SwitchToMode "Normal"
     }
 
     bind "K" {
         MessagePlugin "zj-handful" { payload "chuck"; }
-        SwitchMode "Normal"
+        SwitchToMode "Normal"
     }
 }
 ```
